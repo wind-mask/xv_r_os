@@ -167,7 +167,7 @@ pub fn trap_handler(cx: &mut TrapContext) -> &mut TrapContext {
 }
 fn set_user_trap_entry() {
     unsafe {
-        stvec::write(TRAMPOLINE as usize, TrapMode::Direct);
+        stvec::write(TRAMPOLINE, TrapMode::Direct);
     }
 }
 #[no_mangle]

@@ -1,6 +1,6 @@
 //! Implementation of [`MapArea`] and [`MemorySet`].
 
-use crate::board::qemu::{MEMORY_END, MMIO};
+use crate::board::qemu::MEMORY_END;
 use crate::config::{PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
 use crate::mm::address::StepByOne;
 use crate::println;
@@ -10,7 +10,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::arch::asm;
 use lazy_static::*;
-use log::trace;
+use log::{debug, trace};
 use riscv::register::satp;
 
 use super::address::{PhysAddr, PhysPageNum, VPNRange, VirtAddr, VirtPageNum};
@@ -81,19 +81,20 @@ impl MemorySet {
     }
     /// Without kernel stacks.
     pub fn new_kernel() -> Self {
-        trace!("[kernel] mapping kernel memory");
+        debug!("[kernel] mapping kernel memory");
         let mut memory_set = Self::new_bare();
         // map trampoline
         memory_set.map_trampoline();
         // map kernel sections
-        println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-        println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
-        println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(
+        trace!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+        trace!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+        trace!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+        trace!(
             ".bss [{:#x}, {:#x})",
-            sbss_with_stack as usize, ebss as usize
+            sbss_with_stack as usize,
+            ebss as usize
         );
-        println!("mapping .text section");
+        // println!("mapping .text section");
         memory_set.push(
             MapArea::new(
                 (stext as usize).into(),
@@ -103,7 +104,7 @@ impl MemorySet {
             ),
             None,
         );
-        println!("mapping .rodata section");
+        // println!("mapping .rodata section");
         memory_set.push(
             MapArea::new(
                 (srodata as usize).into(),
@@ -113,7 +114,7 @@ impl MemorySet {
             ),
             None,
         );
-        println!("mapping .data section");
+        // println!("mapping .data section");
         memory_set.push(
             MapArea::new(
                 (sdata as usize).into(),
@@ -123,7 +124,7 @@ impl MemorySet {
             ),
             None,
         );
-        println!("mapping .bss section");
+        // println!("mapping .bss section");
         memory_set.push(
             MapArea::new(
                 (sbss_with_stack as usize).into(),
@@ -133,7 +134,7 @@ impl MemorySet {
             ),
             None,
         );
-        println!("mapping physical memory");
+        // println!("mapping physical memory");
         memory_set.push(
             MapArea::new(
                 (ekernel as usize).into(),
@@ -143,19 +144,18 @@ impl MemorySet {
             ),
             None,
         );
-        println!("mapping memory-mapped registers");
-        for pair in MMIO {
-            memory_set.push(
-                MapArea::new(
-                    (*pair).0.into(),
-                    ((*pair).0 + (*pair).1).into(),
-                    MapType::Identical,
-                    MapPermission::R | MapPermission::W,
-                ),
-                None,
-            );
-        }
-        trace!("kernel memory mapped");
+        // println!("mapping memory-mapped registers");
+        // for pair in MMIO {
+        //     memory_set.push(
+        //         MapArea::new(
+        //             (*pair).0.into(),
+        //             ((*pair).0 + (*pair).1).into(),
+        //             MapType::Identical,
+        //             MapPermission::R | MapPermission::W,
+        //         ),
+        //         None,
+        //     );
+        // }
         memory_set
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,

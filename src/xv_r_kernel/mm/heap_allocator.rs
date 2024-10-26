@@ -13,13 +13,14 @@ use linked_list_allocator::LockedHeap;
 static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 // static mut HEAP_SPACE: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];
-static HEAP_SPACE: MaybeUninit<[u8; KERNEL_HEAP_SIZE]> = MaybeUninit::uninit();
+static mut KERNEL_HEAP_SPACE: MaybeUninit<[u8; KERNEL_HEAP_SIZE]> = MaybeUninit::uninit();
 
 pub fn init_heap() {
     unsafe {
+        #[allow(static_mut_refs)]
         HEAP_ALLOCATOR
             .lock()
-            .init(HEAP_SPACE.as_ptr() as *mut u8, KERNEL_HEAP_SIZE);
+            .init(KERNEL_HEAP_SPACE.as_ptr() as *mut u8, KERNEL_HEAP_SIZE);
     }
 }
 #[alloc_error_handler]

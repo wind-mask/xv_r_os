@@ -1,14 +1,14 @@
 //! Implementation of [`FrameAllocator`] which
 //! controls all the frames in the operating system.
 
+use super::address::PhysPageNum;
 use crate::mm::address::PhysAddr;
 use crate::sync::UPSafeCell;
 use crate::{board::qemu::MEMORY_END, println};
 use alloc::vec::Vec;
 use core::fmt::{self, Debug, Formatter};
 use lazy_static::*;
-
-use super::address::PhysPageNum;
+use log::trace;
 
 /// manage a frame which has the same lifecycle as the tracker
 pub struct FrameTracker {
@@ -99,6 +99,17 @@ pub fn init_frame_allocator() {
     extern "C" {
         fn ekernel();
     }
+    trace!("init_frame_allocator");
+    trace!(
+        "ekernel={:#x}, MEMORY_END={:#x}",
+        ekernel as usize,
+        MEMORY_END
+    );
+    trace!(
+        "current number: {}",
+        PhysAddr::from(ekernel as usize).ceil().0
+    );
+    trace!("end number: {}", PhysAddr::from(MEMORY_END).floor().0);
     FRAME_ALLOCATOR.exclusive_access().init(
         PhysAddr::from(ekernel as usize).ceil(),
         PhysAddr::from(MEMORY_END).floor(),

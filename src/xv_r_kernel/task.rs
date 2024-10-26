@@ -69,11 +69,13 @@ impl TaskControlBlock {
         let task_status = TaskStatus::Ready;
         // map a kernel-stack in kernel space
         let (kernel_stack_bottom, kernel_stack_top) = kernel_stack_position(app_id);
+
         KERNEL_SPACE.exclusive_access().insert_framed_area(
             kernel_stack_bottom.into(),
             kernel_stack_top.into(),
             MapPermission::R | MapPermission::W,
         );
+
         let task_control_block = Self {
             task_status,
             task_cx: TaskContext::goto_trap_return(kernel_stack_top),
@@ -85,6 +87,7 @@ impl TaskControlBlock {
         };
         // prepare TrapContext in user space
         let trap_cx = task_control_block.get_trap_cx();
+
         *trap_cx = TrapContext::app_init_context(
             entry_point,
             user_sp,
@@ -92,6 +95,7 @@ impl TaskControlBlock {
             kernel_stack_top,
             trap_handler as usize,
         );
+
         task_control_block
     }
     /// change the location of the program break. return None if failed.

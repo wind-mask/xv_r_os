@@ -6,24 +6,24 @@
 extern crate alloc;
 use core::ptr::addr_of;
 
-use log::{debug, info, trace};
+use log::{debug, info};
 use xv_r_kernel::{
-    config::{KERNEL_STACK_SIZE, USER_STACK_SIZE},
+    config::KERNEL_STACK_SIZE,
     logging,
     mm::{self, heap_allocator::init_heap, memory_set::remap_test},
     trap::{self},
-    KernelStack, UserStack,
+    KernelStack,
 };
 #[no_mangle]
 #[link_section = ".bss.stack"]
-pub static _KERNEL_STACK: KernelStack = KernelStack {
+pub static mut _KERNEL_STACK: KernelStack = KernelStack {
     data: [0; KERNEL_STACK_SIZE],
 };
-#[no_mangle]
-#[link_section = ".bss.user_stack"]
-pub static _USER_STACK: UserStack = UserStack {
-    data: [0; USER_STACK_SIZE],
-};
+// #[no_mangle]
+// #[link_section = ".bss.user_stack"]
+// pub static mut _USER_STACK: UserStack = UserStack {
+//     data: [0; USER_STACK_SIZE],
+// };
 
 #[cfg(test)]
 use xv_r_kernel::test::test_runner;
@@ -39,7 +39,9 @@ pub extern "C" fn _entry() {
     }
 }
 
-// entry jumps here in machine mode on stack0.
+/// # Safety
+///
+/// entry jumps here in machine mode on stack0.
 #[no_mangle]
 pub unsafe fn _start() {
     clear_bss();
@@ -55,15 +57,18 @@ fn clear_bss() {
     }
     (sbss as usize..ebss as usize).for_each(|a| unsafe { (a as *mut u8).write_volatile(0) });
 }
+#[allow(unused)]
 extern "C" {
+    fn skernel();
     fn stext(); // begin addr of text segment
     fn etext(); // end addr of text segment
     fn srodata(); // start addr of Read-Only data segment
-    fn erodata(); // end addr of Read-Only data ssegment
+    fn erodata(); // end addr of Read-Only data segment
     fn sdata(); // start addr of data segment
     fn edata(); // end addr of data segment
     fn sbss(); // start addr of BSS segment
     fn ebss(); // end addr of BSS segment
+    fn ekernel();
 }
 
 unsafe fn main() {
@@ -73,42 +78,28 @@ unsafe fn main() {
     init_heap();
     info!("[kernel] heap initialized.");
     mm::init();
-
     remap_test();
 
     info!("[kernel] memory management initialized.");
 
-    assert!(trap::init().address() != 0);
+    assert_ne!(trap::init().address(), 0);
     // println!("Hello,{:#x}, sp __test!", sp);
-
-    trace!(
-        "[kernel] .text [{:#x}, {:#x})",
-        stext as usize,
-        etext as usize
+    debug!(
+        "[kernel] .kernel [{:#x}, {:#x})",
+        skernel as usize, ekernel as usize
     );
+    #[allow(static_mut_refs)]
     debug!(
         "[kernel] KERNEL_STACK_RANGE: {:#x} - {:#x}",
         addr_of!(_KERNEL_STACK) as usize,
-        _KERNEL_STACK.get_sp() 
+        _KERNEL_STACK.get_sp()
     );
 
-    debug!(
-        "[kernel] USER_STACK_RANGE: {:#x} - {:#x}",
-        addr_of!(_USER_STACK) as usize,
-        _USER_STACK.get_sp()
-    );
-    trace!(
-        "[kernel] .rodata [{:#x}, {:#x})",
-        srodata as usize,
-        erodata as usize
-    );
-    trace!(
-        "[kernel] .data [{:#x}, {:#x})",
-        sdata as usize,
-        edata as usize
-    );
-
-    debug!("[kernel] .bss [{:#x}, {:#x})", sbss as usize, ebss as usize);
+    // debug!(
+    //     "[kernel] USER_STACK_RANGE: {:#x} - {:#x}",
+    //     addr_of!(_USER_STACK) as usize,
+    //     _USER_STACK.get_sp()
+    // );
 
     loop {}
 }

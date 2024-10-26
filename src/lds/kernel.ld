@@ -1,3 +1,7 @@
+MEMORY {
+    RAM : ORIGIN = 0x80200000, LENGTH = 8M
+}
+
 OUTPUT_ARCH(riscv)
 ENTRY(_entry)
 BASE_ADDRESS = 0x80200000;
@@ -15,14 +19,14 @@ SECTIONS
         *(.text.trampoline);
         . = ALIGN(4K);
         *(.text .text.*)
-    }
+    } > RAM
     . = ALIGN(4K);
     etext = .;
     srodata = .;
     .rodata : {
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
-    }
+    } > RAM
 
     . = ALIGN(4K);
     erodata = .;
@@ -30,7 +34,7 @@ SECTIONS
     .data : {
         *(.data .data.*)
         *(.sdata .sdata.*)
-    }
+    } > RAM
 
     . = ALIGN(4K);
     edata = .;
@@ -43,7 +47,7 @@ SECTIONS
         sbss = .;
         *(.bss .bss.*)
         *(.sbss .sbss.*)
-    }
+    } > RAM
 
     . = ALIGN(4K);
     ebss = .;
