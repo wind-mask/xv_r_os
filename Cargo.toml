@@ -1,0 +1,33 @@
+[package]
+name = "xv_r_os"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "xv_r_os"
+path = "src/main.rs"
+
+[lib]
+name = "xv_r_kernel"
+crate-type = ["staticlib","rlib"]
+path = "./src/xv_r_kernel/lib.rs"
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[dependencies]
+bitflags = "2.6.0"
+# buddy_system_allocator ="0.11.0" 
+# good_memory_allocator = "0.1.7"
+lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
+linked_list_allocator = "0.10.5"
+log = "0.4.22"
+riscv = "0.11.1"
+sbi-rt = { version = "0.0.3", features = ["legacy"] }
+uart_16550 = "0.3.1"
+xmas-elf = "0.9.1"
+
+# bootloader = "0.11.7"
+# bootloader_api = "0.11.7"

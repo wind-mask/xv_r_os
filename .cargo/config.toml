@@ -1,0 +1,12 @@
+
+# [unstable]
+# build-std = ["core", "compiler_builtins","alloc"]
+# build-std-features = ["compiler-builtins-mem"]
+
+[build]
+target = "riscv64gc-unknown-none-elf"
+rustflags = ['-Clink-arg=-Tsrc/lds/kernel.ld']
+target-dir = "target"
+
+[target.'cfg(target_os = "none")']
+runner = "just raw_qemu"
