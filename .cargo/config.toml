@@ -5,7 +5,6 @@
 
 [build]
 target = "riscv64gc-unknown-none-elf"
-rustflags = ['-Clink-arg=-Tsrc/lds/kernel.ld']
 target-dir = "target"
 
 [target.'cfg(target_os = "none")']
