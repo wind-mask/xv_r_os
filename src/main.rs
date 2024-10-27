@@ -18,7 +18,7 @@ use xv_r_kernel::{
 };
 #[no_mangle]
 #[link_section = ".bss.stack"]
-pub static mut _KERNEL_STACK: KernelStack = KernelStack {
+static _KERNEL_STACK: KernelStack = KernelStack {
     data: [0; KERNEL_STACK_SIZE],
 };
 // #[no_mangle]
@@ -93,7 +93,6 @@ unsafe fn main() {
     debug!(
         "[kernel] KERNEL_STACK_RANGE: {:#x} - {:#x}",
         addr_of!(_KERNEL_STACK) as usize,
-        #[allow(static_mut_refs)]
         _KERNEL_STACK.get_sp()
     );
     println!("time: {}", riscv::register::time::read());

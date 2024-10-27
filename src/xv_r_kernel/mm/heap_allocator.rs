@@ -12,15 +12,14 @@ use linked_list_allocator::LockedHeap;
 #[global_allocator]
 static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
 
-// static mut HEAP_SPACE: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];
-static mut KERNEL_HEAP_SPACE: MaybeUninit<[u8; KERNEL_HEAP_SIZE]> = MaybeUninit::uninit();
+#[link_section = ".bss.heap"]
+static KERNEL_HEAP_SPACE: MaybeUninit<[u8; KERNEL_HEAP_SIZE]> = MaybeUninit::uninit();
 
 pub fn init_heap() {
     unsafe {
-        #[allow(static_mut_refs)]
         HEAP_ALLOCATOR
             .lock()
-            .init(KERNEL_HEAP_SPACE.as_mut_ptr() as *mut u8, KERNEL_HEAP_SIZE);
+            .init(&raw const KERNEL_HEAP_SPACE as *mut u8, KERNEL_HEAP_SIZE);
     }
 }
 #[alloc_error_handler]
