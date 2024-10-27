@@ -5,7 +5,7 @@ pub mod address;
 mod frame_allocator;
 pub mod heap_allocator;
 pub mod memory_set;
-mod page_table;
+pub mod page_table;
 
 /// initiate heap allocator, frame allocator and kernel space
 pub fn init() {

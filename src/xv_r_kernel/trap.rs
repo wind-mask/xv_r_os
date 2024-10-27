@@ -1,9 +1,9 @@
-use core::arch::asm;
+use core::arch::{asm, global_asm};
 
-use context::TrapContext;
 use log::{debug, info, trace};
 use riscv::register::{
-    scause::{self, Exception, Trap},
+    scause::{self, Trap},
+    sie::set_stimer,
     stval,
     stvec::{self, Stvec, TrapMode},
 };
@@ -11,149 +11,184 @@ use riscv::register::{
 use crate::{
     config::{TRAMPOLINE, TRAP_CONTEXT},
     syscall::syscall,
-    task::current_user_token,
+    task::{current_trap_cx, current_user_token, suspend_current_and_run_next},
+    timer::set_next_trigger,
 };
 pub mod context;
-
+global_asm!(include_str!("./trap/trap.S"));
+extern "C" {
+    fn __alltraps();
+    fn __restore();
+}
 #[inline(never)]
 #[no_mangle]
 pub fn init() -> Stvec {
-    unsafe {
-        stvec::write(__alltraps as usize, TrapMode::Direct);
-    }
+    debug!("__alltraps addr: {:#x}", __alltraps as usize);
+    set_kernel_trap_entry();
     stvec::read()
 }
-// pub fn trap_from_kernel() -> ! {
-//     panic!("a trap from kernel!");
+fn set_kernel_trap_entry() {
+    unsafe {
+        stvec::write(trap_from_kernel as usize, TrapMode::Direct);
+    }
+}
+#[no_mangle]
+#[repr(align(4))]
+pub fn trap_from_kernel() -> ! {
+    panic!("a trap from kernel!");
+}
+fn set_user_trap_entry() {
+    unsafe {
+        stvec::write(TRAMPOLINE, TrapMode::Direct);
+    }
+}
+
+// /// # Safety
+// ///
+// /// only used in trap handler
+// #[naked]
+// #[link_section = ".text.trampoline"]
+// pub unsafe extern "C" fn __alltraps() -> ! {
+//     use core::arch::naked_asm;
+//     unsafe {
+//         naked_asm!(
+//             ".align 4",
+//             "csrrw sp, sscratch, sp",
+//             // "addi sp, sp, -34*8",
+//             "sd x1, 1*8(sp)",
+//             "sd x3, 3*8(sp)",
+//             "sd x5, 5*8(sp)",
+//             "sd x6, 6*8(sp)",
+//             "sd x7, 7*8(sp)",
+//             "sd x8, 8*8(sp)",
+//             "sd x9, 9*8(sp)",
+//             "sd x10, 10*8(sp)",
+//             "sd x11, 11*8(sp)",
+//             "sd x12, 12*8(sp)",
+//             "sd x13, 13*8(sp)",
+//             "sd x14, 14*8(sp)",
+//             "sd x15, 15*8(sp)",
+//             "sd x16, 16*8(sp)",
+//             "sd x17, 17*8(sp)",
+//             "sd x18, 18*8(sp)",
+//             "sd x19, 19*8(sp)",
+//             "sd x20, 20*8(sp)",
+//             "sd x21, 21*8(sp)",
+//             "sd x22, 22*8(sp)",
+//             "sd x23, 23*8(sp)",
+//             "sd x24, 24*8(sp)",
+//             "sd x25, 25*8(sp)",
+//             "sd x26, 26*8(sp)",
+//             "sd x27, 27*8(sp)",
+//             "sd x28, 28*8(sp)",
+//             "sd x29, 29*8(sp)",
+//             "sd x30, 30*8(sp)",
+//             "sd x31, 31*8(sp)",
+//             "csrr t0, sstatus",
+//             "csrr t1, sepc",
+//             "sd t0, 32*8(sp)",
+//             "sd t1, 33*8(sp)",
+//             "csrr t2, sscratch",
+//             "sd t2, 2*8(sp)",
+//             "ld t0,34*8(sp)",
+//             "ld t1, 36*8(sp)",
+//             "ld sp,35*8(sp)",
+//             // "mv a0, sp",
+//             "csrw satp, t0",
+//             "sfence.vma",
+//             "jr t1",
+//             // "call __restore",
+
+//         );
+//     }
 // }
-#[naked]
-#[link_section = ".text.trampoline"]
-pub extern "C" fn __alltraps() -> ! {
-    use core::arch::naked_asm;
-    unsafe {
-        naked_asm!(
-            ".align 4",
-            "csrrw sp, sscratch, sp",
-            // "addi sp, sp, -34*8",
-            "sd x1, 1*8(sp)",
-            "sd x3, 3*8(sp)",
-            "sd x5, 5*8(sp)",
-            "sd x6, 6*8(sp)",
-            "sd x7, 7*8(sp)",
-            "sd x8, 8*8(sp)",
-            "sd x9, 9*8(sp)",
-            "sd x10, 10*8(sp)",
-            "sd x11, 11*8(sp)",
-            "sd x12, 12*8(sp)",
-            "sd x13, 13*8(sp)",
-            "sd x14, 14*8(sp)",
-            "sd x15, 15*8(sp)",
-            "sd x16, 16*8(sp)",
-            "sd x17, 17*8(sp)",
-            "sd x18, 18*8(sp)",
-            "sd x19, 19*8(sp)",
-            "sd x20, 20*8(sp)",
-            "sd x21, 21*8(sp)",
-            "sd x22, 22*8(sp)",
-            "sd x23, 23*8(sp)",
-            "sd x24, 24*8(sp)",
-            "sd x25, 25*8(sp)",
-            "sd x26, 26*8(sp)",
-            "sd x27, 27*8(sp)",
-            "sd x28, 28*8(sp)",
-            "sd x29, 29*8(sp)",
-            "sd x30, 30*8(sp)",
-            "sd x31, 31*8(sp)",
-            "csrr t0, sstatus",
-            "csrr t1, sepc",
-            "sd t0, 32*8(sp)",
-            "sd t1, 33*8(sp)",
-            "csrr t2, sscratch",
-            "sd t2, 2*8(sp)",
-            "ld t0,34*8(sp)",
-            "ld t1, 36*8(sp)",
-            "ld sp,35*8(sp)",
-            // "mv a0, sp",
-            "csrw satp, t0",
-            "sfence.vma",
-            "jr t1",
-            "call __restore",
-        );
-    }
-}
 
-#[naked]
-#[no_mangle]
-#[link_section = ".text.trampoline"]
-/// # Safety
-///
-/// only used in trap handler
-pub unsafe extern "C" fn __restore(cx_addr: usize) {
-    unsafe {
-        use core::arch::naked_asm;
-        naked_asm!(
-            ".align 4",
-            "mv sp, a0",
-            "ld t0, 32*8(sp)",
-            "ld t1, 33*8(sp)",
-            "ld t2, 2*8(sp)",
-            "csrw sstatus, t0",
-            "csrw sepc, t1",
-            "csrw sscratch, t2", // sscratch now is user stack pointer
-            "ld x1, 1*8(sp)",
-            "ld x3, 3*8(sp)",
-            "ld x5, 5*8(sp)",
-            "ld x6, 6*8(sp)",
-            "ld x7, 7*8(sp)",
-            "ld x8, 8*8(sp)",
-            "ld x9, 9*8(sp)",
-            "ld x10, 10*8(sp)",
-            "ld x11, 11*8(sp)",
-            "ld x12, 12*8(sp)",
-            "ld x13, 13*8(sp)",
-            "ld x14, 14*8(sp)",
-            "ld x15, 15*8(sp)",
-            "ld x16, 16*8(sp)",
-            "ld x17, 17*8(sp)",
-            "ld x18, 18*8(sp)",
-            "ld x19, 19*8(sp)",
-            "ld x20, 20*8(sp)",
-            "ld x21, 21*8(sp)",
-            "ld x22, 22*8(sp)",
-            "ld x23, 23*8(sp)",
-            "ld x24, 24*8(sp)",
-            "ld x25, 25*8(sp)",
-            "ld x26, 26*8(sp)",
-            "ld x27, 27*8(sp)",
-            "ld x28, 28*8(sp)",
-            "ld x29, 29*8(sp)",
-            "ld x30, 30*8(sp)",
-            "ld x31, 31*8(sp)",
-            "addi sp, sp, 34*8",
-            "csrrw sp, sscratch, sp",
-            "sret",
-        );
-    }
-}
+// #[naked]
+// #[no_mangle]
+// #[link_section = ".text.trampoline"]
+// /// # Safety
+// ///
+// /// only used in trap handler
+// pub unsafe extern "C" fn __restore(cx_addr: usize) {
+//     unsafe {
+//         use core::arch::naked_asm;
+//         naked_asm!(
+//             ".align 4",
+//             "csrw satp, a1",
+//             "sfence.vma",
+//             "csrw sscratch, a0",
+//             "mv sp, a0",
+//             "ld t0, 32*8(sp)",
+//             "ld t1, 33*8(sp)",
+//             "csrw sstatus, t0",
+//             "csrw sepc, t1",
+//             // "ld t2, 2*8(sp)",
+//             "ld x1, 1*8(sp)",
+//             "ld x3, 3*8(sp)",
+//             "ld x5, 5*8(sp)",
+//             "ld x6, 6*8(sp)",
+//             "ld x7, 7*8(sp)",
+//             "ld x8, 8*8(sp)",
+//             "ld x9, 9*8(sp)",
+//             "ld x10, 10*8(sp)",
+//             "ld x11, 11*8(sp)",
+//             "ld x12, 12*8(sp)",
+//             "ld x13, 13*8(sp)",
+//             "ld x14, 14*8(sp)",
+//             "ld x15, 15*8(sp)",
+//             "ld x16, 16*8(sp)",
+//             "ld x17, 17*8(sp)",
+//             "ld x18, 18*8(sp)",
+//             "ld x19, 19*8(sp)",
+//             "ld x20, 20*8(sp)",
+//             "ld x21, 21*8(sp)",
+//             "ld x22, 22*8(sp)",
+//             "ld x23, 23*8(sp)",
+//             "ld x24, 24*8(sp)",
+//             "ld x25, 25*8(sp)",
+//             "ld x26, 26*8(sp)",
+//             "ld x27, 27*8(sp)",
+//             "ld x28, 28*8(sp)",
+//             "ld x29, 29*8(sp)",
+//             "ld x30, 30*8(sp)",
+//             "ld x31, 31*8(sp)",
+//             // "addi sp, sp, 34*8",
+//             "ld sp, 2*8(sp)",
+//             // "csrrw sp, sscratch, sp",
+//             "sret",
+//         );
+//     }
+// }
 
+use riscv::interrupt::supervisor::Exception;
 #[no_mangle]
-pub fn trap_handler(cx: &mut TrapContext) -> &mut TrapContext {
+pub fn trap_handler() -> ! {
+    set_kernel_trap_entry();
+    let cx = current_trap_cx();
     trace!("[kernel] Trap: {:#x}", cx.sepc);
     let scause = scause::read();
     let stval = stval::read();
     match scause.cause() {
-        Trap::Exception(Exception::UserEnvCall) => {
+        Trap::Exception(const { Exception::UserEnvCall as usize }) => {
             debug!("[kernel] UserEnvCall");
             cx.sepc += 4;
             cx.x[10] = syscall(cx.x[17], [cx.x[10], cx.x[11], cx.x[12]]) as usize;
         }
-        Trap::Exception(Exception::StoreFault) | Trap::Exception(Exception::StorePageFault) => {
-            info!("[kernel] PageFault in application, kernel killed it.");
+        Trap::Exception(const { Exception::StoreFault as usize })
+        | Trap::Exception(const { Exception::StorePageFault as usize })
+        | Trap::Exception(const { Exception::LoadFault as usize })
+        | Trap::Exception(const { Exception::LoadPageFault as usize }) => {
+            info!("[kernel] PageFault in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.", stval, cx.sepc);
             // run_next_app();
         }
-        Trap::Exception(Exception::IllegalInstruction) => {
+        Trap::Exception(const { Exception::IllegalInstruction as usize }) => {
             info!("[kernel] IllegalInstruction in application, kernel killed it.");
             // run_next_app();
+        }
+        Trap::Interrupt(const { riscv::interrupt::Interrupt::SupervisorTimer as usize }) => {
+            trace!("[kernel] SupervisorTimer");
+            set_next_trigger();
+            suspend_current_and_run_next();
         }
         _ => {
             panic!(
@@ -163,13 +198,9 @@ pub fn trap_handler(cx: &mut TrapContext) -> &mut TrapContext {
             );
         }
     }
-    cx
+    trap_return()
 }
-fn set_user_trap_entry() {
-    unsafe {
-        stvec::write(TRAMPOLINE, TrapMode::Direct);
-    }
-}
+
 #[no_mangle]
 /// set the new addr of __restore asm function in TRAMPOLINE page,
 /// set the reg a0 = trap_cx_ptr, reg a1 = phy addr of usr page table,
@@ -178,10 +209,7 @@ pub fn trap_return() -> ! {
     set_user_trap_entry();
     let trap_cx_ptr = TRAP_CONTEXT;
     let user_satp = current_user_token();
-    // extern "C" {
-    //     fn __alltraps();
-    //     fn __restore();
-    // }
+
     let restore_va = __restore as usize - __alltraps as usize + TRAMPOLINE;
     unsafe {
         asm!(
@@ -192,5 +220,11 @@ pub fn trap_return() -> ! {
             in("a1") user_satp,        // a1 = phy addr of usr page table
             options(noreturn)
         );
+    }
+}
+/// enable timer interrupt in sie CSR
+pub fn enable_timer_interrupt() {
+    unsafe {
+        set_stimer();
     }
 }

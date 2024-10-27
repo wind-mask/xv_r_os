@@ -1,3 +1,4 @@
+#![allow(unused)]
 /// Saved registers for kernel context switches.
 #[repr(C)]
 #[derive(Copy, Clone, Default)]

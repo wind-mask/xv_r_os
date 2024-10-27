@@ -40,7 +40,7 @@ pub fn exit(exit_code: i32) -> isize {
 // const SYSCALL_WRITE: usize = 64;
 // const SYSCALL_EXIT: usize = 93;
 
-use core::arch::asm;
+use core::arch::{asm, global_asm};
 
 use crate::syscall::{SYSCALL_EXIT, SYSCALL_WRITE};
 pub fn syscall(id: usize, args: [usize; 3]) -> isize {
@@ -64,3 +64,4 @@ pub fn sys_write(fd: usize, buffer: &[u8]) -> isize {
 pub fn sys_exit(exit_code: i32) -> isize {
     syscall(SYSCALL_EXIT, [exit_code as usize, 0, 0])
 }
+global_asm!(include_str!("./user/user.S"));

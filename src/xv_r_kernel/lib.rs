@@ -4,6 +4,7 @@
 #![feature(naked_functions)]
 #![feature(fn_align)]
 #![feature(alloc_error_handler)]
+#![feature(inline_const_pat)]
 
 use config::{KERNEL_STACK_SIZE, USER_STACK_SIZE};
 use trap::context::TrapContext;
@@ -20,8 +21,9 @@ mod panic;
 mod proc;
 mod sync;
 pub mod syscall;
-mod task;
+pub mod task;
 pub mod test;
+pub mod timer;
 pub mod trap;
 pub mod user;
 #[macro_use]

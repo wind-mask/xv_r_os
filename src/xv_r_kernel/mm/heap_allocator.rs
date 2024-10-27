@@ -20,7 +20,7 @@ pub fn init_heap() {
         #[allow(static_mut_refs)]
         HEAP_ALLOCATOR
             .lock()
-            .init(KERNEL_HEAP_SPACE.as_ptr() as *mut u8, KERNEL_HEAP_SIZE);
+            .init(KERNEL_HEAP_SPACE.as_mut_ptr() as *mut u8, KERNEL_HEAP_SIZE);
     }
 }
 #[alloc_error_handler]

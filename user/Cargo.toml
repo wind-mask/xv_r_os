@@ -9,3 +9,5 @@ crate-type = ["staticlib", "rlib"]
 path = "src/lib.rs"
 [dependencies]
 xv_r_os = { path = "../" }
+[profile.release]
+strip = "symbols"

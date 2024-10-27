@@ -1,5 +1,6 @@
 //! Constants used in rCore for qemu
 
+pub const NCPU: usize = 8;
 pub const CLOCK_FREQ: usize = 12500000;
 pub const MEMORY_END: usize = 0x80800000;
 pub const MMIO: &[(usize, usize)] = &[

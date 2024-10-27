@@ -39,6 +39,7 @@ impl PageTableEntry {
     pub fn empty() -> Self {
         PageTableEntry { bits: 0 }
     }
+    /// get the physical page number
     pub fn ppn(&self) -> PhysPageNum {
         (self.bits >> 10 & ((1usize << 44) - 1)).into()
     }
@@ -64,12 +65,12 @@ pub struct PageTable {
     root_ppn: PhysPageNum,
     frames: Vec<FrameTracker>,
 }
-
 impl Default for PageTable {
     fn default() -> Self {
         Self::new()
     }
 }
+
 /// Assume that it won't oom when creating/mapping.
 impl PageTable {
     pub fn new() -> Self {
@@ -135,6 +136,7 @@ impl PageTable {
         assert!(pte.is_valid(), "vpn {:?} is invalid before unmapping", vpn);
         *pte = PageTableEntry::empty();
     }
+    /// get the page table entry of the virtual page number
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.find_pte(vpn).map(|pte| *pte)
     }
@@ -142,10 +144,7 @@ impl PageTable {
         8usize << 60 | self.root_ppn.0
     }
 }
-
-#[allow(unused)]
-/// translate a pointer to a mutable u8 Vec through page table
-pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&'static mut [u8]> {
+pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&'static mut u8> {
     let page_table = PageTable::from_token(token);
     let mut start = ptr as usize;
     let end = start + len;
@@ -157,12 +156,38 @@ pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&
         vpn.step();
         let mut end_va: VirtAddr = vpn.into();
         end_va = end_va.min(VirtAddr::from(end));
-        if end_va.page_offset() == 0 {
-            v.push(&mut ppn.get_bytes_array()[start_va.page_offset()..]);
+        let start_offset = start_va.page_offset();
+        let end_offset = if end_va.page_offset() == 0 {
+            ppn.get_bytes_array().len()
         } else {
-            v.push(&mut ppn.get_bytes_array()[start_va.page_offset()..end_va.page_offset()]);
+            end_va.page_offset()
+        };
+        for offset in start_offset..end_offset {
+            v.push(&mut ppn.get_bytes_array()[offset]);
         }
         start = end_va.into();
     }
     v
 }
+// /// translate a pointer to a mutable u8 Vec through page table
+// pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&'static mut [u8]> {
+//     let page_table = PageTable::from_token(token);
+//     let mut start = ptr as usize;
+//     let end = start + len;
+//     let mut v = Vec::new();
+//     while start < end {
+//         let start_va = VirtAddr::from(start);
+//         let mut vpn = start_va.floor();
+//         let ppn = page_table.translate(vpn).unwrap().ppn();
+//         vpn.step();
+//         let mut end_va: VirtAddr = vpn.into();
+//         end_va = end_va.min(VirtAddr::from(end));
+//         if end_va.page_offset() == 0 {
+//             v.push(&mut ppn.get_bytes_array()[start_va.page_offset()..]);
+//         } else {
+//             v.push(&mut ppn.get_bytes_array()[start_va.page_offset()..end_va.page_offset()]);
+//         }
+//         start = end_va.into();
+//     }
+//     v
+// }

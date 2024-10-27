@@ -9,4 +9,5 @@ use user_lib::print;
 #[no_mangle]
 fn main() {
     print!("Hello, world!\n");
+    loop {}
 }

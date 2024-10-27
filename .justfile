@@ -15,6 +15,8 @@ QEMU_ARGS := "-machine virt  -bios "  + BOOTLOADER +  " -device loader,file="+KE
 #QEMU_ARGS := "-machine virt  -bios "  + BOOTLOADER + " -kernel " + KERNEL_BIN
 LOG_LEVEL_ENV := env_var_or_default('LOG', 'info')
 build LOG_LEVEL = LOG_LEVEL_ENV:
+    @echo "build user program"
+    @cd user;cargo +nightly build --release -v
     @echo "cargo build"
     @$env.LOG = '{{LOG_LEVEL}}' ;cargo +nightly build --release -v
     # @cargo +nightly build --release -v

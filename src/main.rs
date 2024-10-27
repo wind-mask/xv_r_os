@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(custom_test_frameworks)]
 #![feature(naked_functions)]
+#![feature(stmt_expr_attributes)]
 #![test_runner(test_runner)]
 extern crate alloc;
 use core::ptr::addr_of;
@@ -11,6 +12,7 @@ use xv_r_kernel::{
     config::KERNEL_STACK_SIZE,
     logging,
     mm::{self, heap_allocator::init_heap, memory_set::remap_test},
+    println, task, timer,
     trap::{self},
     KernelStack,
 };
@@ -88,12 +90,17 @@ unsafe fn main() {
         "[kernel] .kernel [{:#x}, {:#x})",
         skernel as usize, ekernel as usize
     );
-    #[allow(static_mut_refs)]
     debug!(
         "[kernel] KERNEL_STACK_RANGE: {:#x} - {:#x}",
         addr_of!(_KERNEL_STACK) as usize,
+        #[allow(static_mut_refs)]
         _KERNEL_STACK.get_sp()
     );
+    println!("time: {}", riscv::register::time::read());
+    trap::enable_timer_interrupt();
+    timer::set_next_trigger();
+
+    task::run_first_task();
 
     // debug!(
     //     "[kernel] USER_STACK_RANGE: {:#x} - {:#x}",
