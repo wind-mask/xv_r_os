@@ -19,7 +19,12 @@ SECTIONS
     .data : {
         *(.data .data.*)
     }
+    . = ALIGN(4K);
     sbss = .;
+    .sbss : {
+        *(.sbss .sbss.*)
+    }
+        . = ALIGN(4K);
     .bss : {
         *(.bss .bss.*)
     }

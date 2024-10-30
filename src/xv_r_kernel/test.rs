@@ -1,4 +1,4 @@
-use crate::println;
+use crate::printf::println;
 
 pub fn test_runner(_test: &[&dyn Fn()]) {
     println!("Running {} tests", _test.len());

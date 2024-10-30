@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 use context::TaskContext;
-use log::debug;
+use log::{debug, trace};
 use switch::__switch;
 
 use crate::{
@@ -10,8 +10,8 @@ use crate::{
         address::{PhysPageNum, VirtAddr},
         memory_set::{MapPermission, MemorySet, KERNEL_SPACE},
     },
+    printf::println,
     printf::shutdown,
-    println,
     sync::UPSafeCell,
     trap::{context::TrapContext, trap_handler},
 };
@@ -57,6 +57,7 @@ impl TaskControlBlock {
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
             .ppn();
+
         let task_status = TaskStatus::Ready;
         // map a kernel-stack in kernel space
         let (kernel_stack_bottom, kernel_stack_top) = kernel_stack_position(app_id);
@@ -65,6 +66,7 @@ impl TaskControlBlock {
             kernel_stack_top.into(),
             MapPermission::R | MapPermission::W,
         );
+
         let task_control_block = Self {
             task_status,
             task_cx: TaskContext::goto_trap_return(kernel_stack_top),
@@ -131,6 +133,7 @@ impl TaskManager {
         let task0 = &mut inner.tasks[0];
         task0.task_status = TaskStatus::Running;
         let next_task_cx_ptr = &task0.task_cx as *const TaskContext;
+
         drop(inner);
         let mut _unused = TaskContext::zero_init();
         // before this, we should drop local variables that must be dropped manually
@@ -176,7 +179,7 @@ impl TaskManager {
             let current_task_cx_ptr = &mut inner.tasks[current].task_cx as *mut TaskContext;
             let next_task_cx_ptr = &inner.tasks[next].task_cx as *const TaskContext;
             drop(inner);
-            debug!("switch to task {}", next);
+            trace!("switch to task {}", next);
             // before this, we should drop local variables that must be dropped manually
             unsafe {
                 __switch(current_task_cx_ptr, next_task_cx_ptr);
@@ -198,6 +201,7 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
 }
 /// Run the first task in task list.
 pub fn run_first_task() {
+    debug!("run_first_task");
     TASK_MANAGER.run_first_task();
 }
 /// Change the status of current `Running` task into `Ready`.

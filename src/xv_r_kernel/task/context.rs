@@ -3,7 +3,7 @@
 use crate::trap::trap_return;
 
 /// Task Context
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 #[repr(C)]
 pub struct TaskContext {
     /// return address ( e.g. __restore ) of __switch ASM function

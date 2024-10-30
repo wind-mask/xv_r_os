@@ -4,10 +4,11 @@
 #![test_runner(test_runner)]
 #[cfg(test)]
 use user_lib::test::test_runner;
-use user_lib::print;
+use user_lib::{exit, print};
 
 #[no_mangle]
 fn main() {
     print!("Hello, world!\n");
+    exit(0);
     loop {}
 }

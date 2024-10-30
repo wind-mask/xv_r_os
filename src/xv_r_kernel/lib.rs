@@ -25,9 +25,9 @@ pub mod task;
 pub mod test;
 pub mod timer;
 pub mod trap;
-pub mod user;
-#[macro_use]
-pub mod printf;
+// pub mod user;
+// #[macro_use]
+pub(crate) mod printf;
 
 #[repr(C)]
 #[repr(align(4096))]

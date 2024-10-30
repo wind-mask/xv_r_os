@@ -4,11 +4,11 @@
 use super::address::PhysPageNum;
 use crate::mm::address::PhysAddr;
 use crate::sync::UPSafeCell;
-use crate::{board::qemu::MEMORY_END, println};
+use crate::{board::qemu::MEMORY_END, printf::println};
 use alloc::vec::Vec;
 use core::fmt::{self, Debug, Formatter};
 use lazy_static::*;
-use log::trace;
+use log::debug;
 
 /// manage a frame which has the same lifecycle as the tracker
 pub struct FrameTracker {
@@ -99,17 +99,16 @@ pub fn init_frame_allocator() {
     extern "C" {
         fn ekernel();
     }
-    trace!("init_frame_allocator");
-    trace!(
+    debug!("init_frame_allocator");
+    debug!(
         "ekernel={:#x}, MEMORY_END={:#x}",
-        ekernel as usize,
-        MEMORY_END
+        ekernel as usize, MEMORY_END
     );
-    trace!(
+    debug!(
         "current number: {}",
         PhysAddr::from(ekernel as usize).ceil().0
     );
-    trace!("end number: {}", PhysAddr::from(MEMORY_END).floor().0);
+    debug!("end number: {}", PhysAddr::from(MEMORY_END).floor().0);
     FRAME_ALLOCATOR.exclusive_access().init(
         PhysAddr::from(ekernel as usize).ceil(),
         PhysAddr::from(MEMORY_END).floor(),

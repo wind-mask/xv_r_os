@@ -8,6 +8,9 @@ name = "user_lib"
 crate-type = ["staticlib", "rlib"]
 path = "src/lib.rs"
 [dependencies]
-xv_r_os = { path = "../" }
+linked_list_allocator = "0.10.5"
+num_enum = {version = "0.7.3",default-features = false}
+
+# xv_r_os = { path = "../" }
 [profile.release]
 strip = "symbols"

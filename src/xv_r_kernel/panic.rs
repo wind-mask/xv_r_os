@@ -1,6 +1,6 @@
 use core::panic::PanicInfo;
 
-use crate::{printf::shutdown, println};
+use crate::{printf::println, printf::shutdown};
 
 /// 这个函数将在 panic 时被调用
 #[panic_handler]

@@ -1,6 +1,6 @@
 use core::arch::{asm, global_asm};
 
-use log::{debug, info, trace};
+use log::{debug, trace};
 use riscv::register::{
     scause::{self, Trap},
     sie::set_stimer,
@@ -170,7 +170,7 @@ pub fn trap_handler() -> ! {
     let stval = stval::read();
     match scause.cause() {
         Trap::Exception(const { Exception::UserEnvCall as usize }) => {
-            debug!("[kernel] UserEnvCall");
+            trace!("[kernel] UserEnvCall");
             cx.sepc += 4;
             cx.x[10] = syscall(cx.x[17], [cx.x[10], cx.x[11], cx.x[12]]) as usize;
         }
@@ -178,15 +178,14 @@ pub fn trap_handler() -> ! {
         | Trap::Exception(const { Exception::StorePageFault as usize })
         | Trap::Exception(const { Exception::LoadFault as usize })
         | Trap::Exception(const { Exception::LoadPageFault as usize }) => {
-            info!("[kernel] PageFault in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.", stval, cx.sepc);
+            panic!("[kernel] PageFault in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.", stval, cx.sepc);
             // run_next_app();
         }
         Trap::Exception(const { Exception::IllegalInstruction as usize }) => {
-            info!("[kernel] IllegalInstruction in application, kernel killed it.");
+            panic!("[kernel] IllegalInstruction in application, kernel killed it.");
             // run_next_app();
         }
         Trap::Interrupt(const { riscv::interrupt::Interrupt::SupervisorTimer as usize }) => {
-            trace!("[kernel] SupervisorTimer");
             set_next_trigger();
             suspend_current_and_run_next();
         }
@@ -198,6 +197,7 @@ pub fn trap_handler() -> ! {
             );
         }
     }
+
     trap_return()
 }
 

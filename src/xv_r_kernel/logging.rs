@@ -4,7 +4,6 @@
 
 */
 
-use crate::println;
 use log::{self, Level, LevelFilter, Log, Metadata, Record};
 
 struct SimpleLogger;
@@ -24,6 +23,7 @@ impl Log for SimpleLogger {
             Level::Debug => 32, // Green
             Level::Trace => 90, // BrightBlack
         };
+        use crate::printf::println;
         println!(
             "\u{1B}[{}m[{:>5}] {}\u{1B}[0m",
             color,

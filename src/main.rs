@@ -5,14 +5,14 @@
 #![feature(stmt_expr_attributes)]
 #![test_runner(test_runner)]
 extern crate alloc;
-use core::ptr::addr_of;
+use core::{arch::global_asm, ptr::addr_of};
 
 use log::{debug, info};
 use xv_r_kernel::{
     config::KERNEL_STACK_SIZE,
     logging,
     mm::{self, heap_allocator::init_heap, memory_set::remap_test},
-    println, task, timer,
+    task, timer,
     trap::{self},
     KernelStack,
 };
@@ -95,7 +95,7 @@ unsafe fn main() {
         addr_of!(_KERNEL_STACK) as usize,
         _KERNEL_STACK.get_sp()
     );
-    println!("time: {}", riscv::register::time::read());
+    info!("time: {}", riscv::register::time::read());
     trap::enable_timer_interrupt();
     timer::set_next_trigger();
 
@@ -107,5 +107,6 @@ unsafe fn main() {
     //     _USER_STACK.get_sp()
     // );
 
-    loop {}
+    unreachable!()
 }
+global_asm!(include_str!("./xv_r_kernel/user/user.S"));

@@ -3,14 +3,14 @@
 use crate::board::qemu::MEMORY_END;
 use crate::config::{PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
 use crate::mm::address::StepByOne;
-use crate::println;
+use crate::printf::println;
 use crate::sync::UPSafeCell;
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::arch::asm;
 use lazy_static::*;
-use log::{debug, trace};
+use log::debug;
 use riscv::register::satp;
 
 use super::address::{PhysAddr, PhysPageNum, VPNRange, VirtAddr, VirtPageNum};
@@ -86,13 +86,12 @@ impl MemorySet {
         // map trampoline
         memory_set.map_trampoline();
         // map kernel sections
-        trace!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-        trace!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
-        trace!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        trace!(
+        debug!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+        debug!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+        debug!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+        debug!(
             ".bss [{:#x}, {:#x})",
-            sbss_with_stack as usize,
-            ebss as usize
+            sbss_with_stack as usize, ebss as usize
         );
         // println!("mapping .text section");
         memory_set.push(
@@ -189,6 +188,7 @@ impl MemorySet {
                 }
                 let map_area = MapArea::new(start_va, end_va, MapType::Framed, map_perm);
                 max_end_vpn = map_area.vpn_range.get_end();
+
                 memory_set.push(
                     map_area,
                     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
@@ -196,11 +196,13 @@ impl MemorySet {
             }
         }
         // map user stack with U flags
+
         let max_end_va: VirtAddr = max_end_vpn.into();
         let mut user_stack_bottom: usize = max_end_va.into();
         // guard page
         user_stack_bottom += PAGE_SIZE;
         let user_stack_top = user_stack_bottom + USER_STACK_SIZE;
+
         memory_set.push(
             MapArea::new(
                 user_stack_bottom.into(),
@@ -210,6 +212,7 @@ impl MemorySet {
             ),
             None,
         );
+
         // used in sbrk
         memory_set.push(
             MapArea::new(
@@ -230,6 +233,7 @@ impl MemorySet {
             ),
             None,
         );
+
         (
             memory_set,
             user_stack_top,
@@ -311,6 +315,7 @@ impl MapArea {
             }
         }
         let pte_flags = PTEFlags::from_bits(self.map_perm.bits()).unwrap();
+
         page_table.map(vpn, ppn, pte_flags);
     }
     #[allow(unused)]
@@ -378,6 +383,7 @@ pub enum MapType {
 use bitflags::bitflags;
 bitflags! {
     /// map permission corresponding to that in pte: `R W X U`
+    #[derive(Debug,Clone, Copy)]
     pub struct MapPermission: u8 {
         const R = 1 << 1;
         const W = 1 << 2;
