@@ -231,6 +231,7 @@ version = "0.1.0"
 dependencies = [
  "linked_list_allocator",
  "num_enum",
+ "xv_r_kernel_pub",
 ]
 
 [[package]]
@@ -254,6 +255,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "xv_r_kernel_pub"
+version = "0.1.0"
+dependencies = [
+ "num_enum",
+]
+
+[[package]]
 name = "xv_r_os"
 version = "0.1.0"
 dependencies = [
@@ -266,6 +274,7 @@ dependencies = [
  "sbi-rt",
  "uart_16550",
  "xmas-elf",
+ "xv_r_kernel_pub",
 ]
 
 [[package]]

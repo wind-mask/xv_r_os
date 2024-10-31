@@ -276,6 +276,19 @@ impl MemorySet {
             false
         }
     }
+    pub fn remove_area_with_start_vpn(&mut self, start: VirtPageNum) -> bool {
+        if let Some(index) = self
+            .areas
+            .iter()
+            .position(|area| area.vpn_range.get_start() == start)
+        {
+            let mut area = self.areas.remove(index);
+            area.unmap(&mut self.page_table);
+            true
+        } else {
+            false
+        }
+    }
 }
 
 /// map area structure, controls a contiguous piece of virtual memory

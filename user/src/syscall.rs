@@ -1,20 +1,7 @@
 use core::arch::asm;
 
-use num_enum::TryFromPrimitive;
+use xv_r_kernel_pub::SyscallId;
 
-// use xv_r_kernel::syscall::SyscallId;
-#[derive(TryFromPrimitive)]
-#[repr(usize)]
-pub enum SyscallId {
-    Read = 63,
-    Write = 64,
-    Exit = 93,
-    Yield = 124,
-    Time = 169,
-    Fork = 220,
-    Exec = 221,
-    Waitpid = 260,
-}
 pub fn syscall(id: SyscallId, args: [usize; 3]) -> isize {
     let mut ret: isize;
     unsafe {

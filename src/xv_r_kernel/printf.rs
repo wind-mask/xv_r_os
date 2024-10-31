@@ -5,6 +5,7 @@ struct Stdout;
 impl Write for Stdout {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for c in s.chars() {
+            #[allow(deprecated)]
             console_putchar(c as usize); //下面的实现在从user space返回后打印存在错误，原因不明
         }
         // let addr = s.as_bytes().as_ptr() as usize;
@@ -33,7 +34,6 @@ macro_rules! println {
 }
 pub(crate) use print;
 pub(crate) use println;
-use sbi_rt::{console_write, Physical};
 pub fn _print(args: fmt::Arguments) {
     Stdout.write_fmt(args).unwrap();
 }

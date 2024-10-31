@@ -1,4 +1,4 @@
-use alloc::vec::{Vec};
+use alloc::vec::Vec;
 use log::trace;
 use sbi_rt::Physical;
 

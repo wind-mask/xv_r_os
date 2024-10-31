@@ -5,7 +5,8 @@
 #![feature(stmt_expr_attributes)]
 #![test_runner(test_runner)]
 extern crate alloc;
-use core::{arch::global_asm, ptr::addr_of};
+
+use core::ptr::addr_of;
 
 use log::{debug, info};
 use xv_r_kernel::{
@@ -21,15 +22,9 @@ use xv_r_kernel::{
 static _KERNEL_STACK: KernelStack = KernelStack {
     data: [0; KERNEL_STACK_SIZE],
 };
-// #[no_mangle]
-// #[link_section = ".bss.user_stack"]
-// pub static mut _USER_STACK: UserStack = UserStack {
-//     data: [0; USER_STACK_SIZE],
-// };
 
 #[cfg(test)]
 use xv_r_kernel::test::test_runner;
-// global_asm!(include_str!("entry.asm"));
 
 #[naked]
 #[no_mangle]
@@ -101,12 +96,5 @@ unsafe fn main() {
 
     task::run_first_task();
 
-    // debug!(
-    //     "[kernel] USER_STACK_RANGE: {:#x} - {:#x}",
-    //     addr_of!(_USER_STACK) as usize,
-    //     _USER_STACK.get_sp()
-    // );
-
     unreachable!()
 }
-global_asm!(include_str!("./xv_r_kernel/user/user.S"));

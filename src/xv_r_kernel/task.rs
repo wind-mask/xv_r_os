@@ -5,15 +5,14 @@ use switch::__switch;
 
 use crate::{
     config::{kernel_stack_position, TRAP_CONTEXT},
-    loader::{get_app_data, get_num_app},
     mm::{
         address::{PhysPageNum, VirtAddr},
         memory_set::{MapPermission, MemorySet, KERNEL_SPACE},
     },
-    printf::println,
-    printf::shutdown,
+    printf::{println, shutdown},
     sync::UPSafeCell,
     trap::{context::TrapContext, trap_handler},
+    user::{APP_0_DATA, APP_1_DATA, NUM_APP},
 };
 
 mod context;
@@ -22,11 +21,12 @@ use lazy_static::lazy_static;
 lazy_static! {
     pub static ref TASK_MANAGER: TaskManager = {
         println!("init TASK_MANAGER");
-        let num_app = get_num_app();
+        let num_app = NUM_APP;
         println!("num_app = {}", num_app);
+        let app_datas = [APP_0_DATA, APP_1_DATA];
         let mut tasks: Vec<TaskControlBlock> = Vec::new();
         for i in 0..num_app {
-            tasks.push(TaskControlBlock::new(get_app_data(i), i));
+            tasks.push(TaskControlBlock::new(app_datas[i], i));
         }
         TaskManager {
             num_app,
@@ -98,6 +98,7 @@ pub enum TaskStatus {
     UnInit,
     Ready,
     Running,
+    Zombie,
     Exited,
 }
 pub struct TaskManager {

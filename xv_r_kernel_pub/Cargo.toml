@@ -1,0 +1,13 @@
+[package]
+name = "xv_r_kernel_pub"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "xv_r_kernel_pub"
+crate-type = ["rlib"]
+path = "src/lib.rs"
+[dependencies]
+num_enum = {version = "0.7.3",default-features = false}
+[profile.release]
+

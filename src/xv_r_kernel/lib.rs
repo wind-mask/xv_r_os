@@ -15,6 +15,7 @@ pub mod board;
 pub mod config;
 mod hal;
 mod loader;
+pub mod  user;
 pub mod logging;
 pub mod mm;
 mod panic;

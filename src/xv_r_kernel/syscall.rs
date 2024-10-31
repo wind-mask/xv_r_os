@@ -7,18 +7,7 @@ mod fs;
 mod process;
 mod time;
 
-#[derive(TryFromPrimitive)]
-#[repr(usize)]
-pub enum SyscallId {
-    Read = 63,
-    Write = 64,
-    Exit = 93,
-    Yield = 124,
-    Time = 169,
-    Fork = 220,
-    Exec = 221,
-    Waitpid = 260,
-}
+use xv_r_kernel_pub::SyscallId;
 pub(crate) fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
     trace!(
         "[kernel] syscall_id: {}, args: [{:#x}, {:#x}, {:#x}]",

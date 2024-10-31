@@ -3,7 +3,7 @@ name = "xv_r_os"
 version = "0.1.0"
 edition = "2021"
 [workspace]
-members = ["user"]
+members = ["user","xv_r_kernel_pub"]
 [[bin]]
 name = "xv_r_os"
 path = "src/main.rs"
@@ -31,6 +31,6 @@ riscv = "0.12.1"
 sbi-rt = { version = "0.0.3", features = ["legacy"] }
 uart_16550 = "0.3.1"
 xmas-elf = "0.9.1"
-
+xv_r_kernel_pub = { path = "xv_r_kernel_pub" }
 # bootloader = "0.11.7"
 # bootloader_api = "0.11.7"
