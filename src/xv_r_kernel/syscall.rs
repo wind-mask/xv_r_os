@@ -1,7 +1,7 @@
 use fs::{sys_read, sys_write};
 use log::trace;
 use num_enum::TryFromPrimitive;
-use process::{sys_exit, sys_waitpid, sys_yield};
+use process::{sys_exec, sys_exit, sys_fork, sys_waitpid, sys_yield};
 use time::sys_get_time;
 mod fs;
 mod process;
@@ -24,8 +24,8 @@ pub(crate) fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
             SyscallId::Time => sys_get_time(args[0] as *mut time::TimeVal, args[1]),
             SyscallId::Yield => sys_yield(),
             SyscallId::Waitpid => sys_waitpid(args[0] as isize, args[1] as *mut i32),
-            SyscallId::Fork => todo!(),
-            SyscallId::Exec => todo!(),
+            SyscallId::Fork => sys_fork(),
+            SyscallId::Exec => sys_exec(args[0] as *const u8),
         },
         Err(e) => {
             panic!("Unsupported syscall_id: {}", e.number);

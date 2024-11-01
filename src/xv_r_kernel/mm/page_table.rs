@@ -1,10 +1,11 @@
 //! Implementation of [`PageTableEntry`] and [`PageTable`].
 
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::*;
 
-use super::address::{PhysPageNum, StepByOne, VirtAddr, VirtPageNum};
+use super::address::{PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum};
 use super::frame_allocator::{frame_alloc, FrameTracker};
 
 bitflags! {
@@ -107,12 +108,13 @@ impl PageTable {
         }
         result
     }
+    /// find the page table entry of the virtual page number
     fn find_pte(&self, vpn: VirtPageNum) -> Option<&mut PageTableEntry> {
         let idxs = vpn.indexes();
         let mut ppn = self.root_ppn;
         let mut result: Option<&mut PageTableEntry> = None;
         for (i, idx) in idxs.iter().enumerate() {
-            let pte = &mut ppn.get_pte_array()[*idx];
+            let pte: &mut PageTableEntry = &mut ppn.get_pte_array()[*idx];
             if i == 2 {
                 result = Some(pte);
                 break;
@@ -139,6 +141,16 @@ impl PageTable {
     /// get the page table entry of the virtual page number
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.find_pte(vpn).map(|pte| *pte)
+    }
+    pub fn translate_va(&self, va: VirtAddr) -> Option<PhysAddr> {
+        let vpn = va.floor();
+        let pte = self.find_pte(vpn)?;
+        if pte.is_valid() {
+            let b = pte.ppn().get_bytes_array();
+            Some(PhysAddr::from(va.page_offset() + (b.as_ptr() as usize)))
+        } else {
+            None
+        }
     }
     pub fn token(&self) -> usize {
         8usize << 60 | self.root_ppn.0
@@ -168,6 +180,42 @@ pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&
         start = end_va.into();
     }
     v
+}
+/// 从用户空间指针读取一个以\0结尾的字符串
+///
+/// # Safety
+///
+/// 确保token是有效的
+///
+/// 确保字符串以\0结尾
+pub unsafe fn translated_str(token: usize, ptr: *const u8) -> String {
+    let page_table = PageTable::from_token(token);
+    let mut string = String::new();
+    let mut va = ptr as usize;
+    loop {
+        let ch: u8 = *(page_table.translate_va(VirtAddr::from(va)).unwrap().0 as *const u8);
+        if ch == 0 {
+            break;
+        } else {
+            string.push(ch as char);
+            va += 1;
+        }
+    }
+    string
+}
+/// 从用户空间指针读取一个类型为T的引用
+///
+/// # Safety
+///
+/// 确保token是有效的
+///
+/// 确保ptr指向的内存是有效的T类型
+pub unsafe fn translated_refmut<'a, T>(token: usize, ptr: *mut T) -> &'a mut T {
+    let page_table = PageTable::from_token(token);
+    let pa = page_table
+        .translate_va(VirtAddr::from(ptr as usize))
+        .unwrap();
+    &mut *(pa.0 as *mut T)
 }
 // /// translate a pointer to a mutable u8 Vec through page table
 // pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&'static mut [u8]> {

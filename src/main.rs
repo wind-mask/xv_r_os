@@ -13,7 +13,8 @@ use xv_r_kernel::{
     config::KERNEL_STACK_SIZE,
     logging,
     mm::{self, heap_allocator::init_heap, memory_set::remap_test},
-    task, timer,
+    proc::cpu::run_tasks,
+    timer,
     trap::{self},
     KernelStack,
 };
@@ -29,16 +30,22 @@ use xv_r_kernel::test::test_runner;
 #[naked]
 #[no_mangle]
 #[link_section = ".text.entry"]
-pub extern "C" fn _entry() {
+/// 汇编级入口点
+///
+/// # Safety
+///
+/// 由链接器设为entry，不应该被用户调用
+pub unsafe extern "C" fn _entry() {
     unsafe {
         use core::arch::naked_asm;
         naked_asm!(".align 4", "la sp, stack0_top", "call _start",);
     }
 }
 
+/// Rust级入口点,由内联汇编调用，因此 `#[no_mangle]`
 /// # Safety
 ///
-/// entry jumps here in machine mode on stack0.
+/// 由_entry调用，不应该被用户调用
 #[no_mangle]
 pub unsafe fn _start() {
     clear_bss();
@@ -46,13 +53,22 @@ pub unsafe fn _start() {
 
     main()
 }
-fn clear_bss() {
+/// 初始化bss段
+/// 1. sbss和ebss是由链接器脚本公开
+/// 2. bss段是未初始化的全局变量段
+/// 3. bss段的起始地址是sbss，结束地址是ebss
+/// 4. bss段的内容初始化为0
+///
+/// # Safety
+///
+/// 只允许在启动时调用一次
+unsafe fn clear_bss() {
     #[allow(unused)]
     extern "C" {
         fn sbss();
         fn ebss();
     }
-    (sbss as usize..ebss as usize).for_each(|a| unsafe { (a as *mut u8).write_volatile(0) });
+    (sbss as usize..ebss as usize).for_each(|a| (a as *mut u8).write_volatile(0));
 }
 #[allow(unused)]
 extern "C" {
@@ -68,19 +84,23 @@ extern "C" {
     fn ekernel();
 }
 
-unsafe fn main() {
+/// 主函数
+///
+/// 由_start在RUST中调用，安全入口
+fn main() {
+    // 初始化日志系统
     logging::init();
     info!("[kernel] logging initialized.");
-
-    init_heap();
+    // 初始化堆，必须先于alloc之前调用
+    unsafe { init_heap() };
     info!("[kernel] heap initialized.");
-    mm::init();
+    // 初始化内存管理系统，分页，虚拟内存
+    unsafe { mm::init() };
     remap_test();
 
     info!("[kernel] memory management initialized.");
-
-    assert_ne!(trap::init().address(), 0);
-    // println!("Hello,{:#x}, sp __test!", sp);
+    // UNSAFE: unsafe：trap::init()只能在内核初始化时调用一次
+    assert_ne!(unsafe { trap::init().address() }, 0);
     debug!(
         "[kernel] .kernel [{:#x}, {:#x})",
         skernel as usize, ekernel as usize
@@ -91,10 +111,9 @@ unsafe fn main() {
         _KERNEL_STACK.get_sp()
     );
     info!("time: {}", riscv::register::time::read());
-    trap::enable_timer_interrupt();
+    // trap::enable_timer_interrupt();
     timer::set_next_trigger();
 
-    task::run_first_task();
-
+    unsafe { run_tasks() };
     unreachable!()
 }

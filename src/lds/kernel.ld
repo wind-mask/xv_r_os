@@ -26,6 +26,7 @@ SECTIONS
     .rodata : {
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
+
     } > RAM
 
     . = ALIGN(4K);

@@ -4,6 +4,8 @@ use crate::timer::{get_time_s, get_time_us};
 /// 返回值：返回是否执行成功，成功则返回 0
 /// syscall ID：169
 pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
+    //　UNSAFE: 需要确保 ts 是有效的TimeVal结构体指针
+    // FIXME: 未检查用户空间指针是否有效
     unsafe {
         ts.write(TimeVal {
             sec: get_time_s(),

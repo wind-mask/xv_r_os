@@ -14,20 +14,30 @@ use heap::init_heap;
 use syscall::*;
 #[cfg(test)]
 use test::test_runner;
+/// 用户程序汇编级入口点，由链接器设为entry，需要`extern "C"`,`#[no_mangle]`
+///
+/// # Safety
+///
+/// 由链接器设为entry，不应该被用户调用
 #[no_mangle]
 #[link_section = ".text.entry"]
-extern "C" fn _start() -> ! {
+unsafe extern "C" fn _start() -> ! {
     clear_bss();
-    unsafe { init_heap() };
+    init_heap();
     exit(main());
     panic!("unreachable after sys_exit!");
 }
-fn clear_bss() {
+/// 初始化bss段
+///
+/// # Safety
+///
+/// 仅在_start中调用
+unsafe fn clear_bss() {
     extern "C" {
         fn sbss();
         fn ebss();
     }
-    (sbss as usize..ebss as usize).for_each(|addr| unsafe {
+    (sbss as usize..ebss as usize).for_each(|addr| {
         (addr as *mut u8).write_volatile(0);
     });
 }

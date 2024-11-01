@@ -1,2 +1,3 @@
 mod context;
-mod cpu;
+pub mod cpu;
+pub mod pid;

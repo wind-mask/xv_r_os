@@ -98,9 +98,11 @@ impl From<VirtPageNum> for usize {
 }
 
 impl VirtAddr {
+    /// 返回此虚拟地址所在的页号
     pub fn floor(&self) -> VirtPageNum {
         VirtPageNum(self.0 / PAGE_SIZE)
     }
+    /// 返回此比此虚拟地址大的最小页号
     pub fn ceil(&self) -> VirtPageNum {
         if self.0 == 0 {
             VirtPageNum(0)
@@ -167,7 +169,7 @@ impl VirtPageNum {
         idx
     }
 }
-
+// UNSAFE: 需要确保物理页号对应的内存是有效的
 impl PhysPageNum {
     pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
         let pa: PhysAddr = (*self).into();

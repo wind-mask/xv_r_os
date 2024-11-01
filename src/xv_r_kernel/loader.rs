@@ -1,22 +1,18 @@
-pub fn get_num_app() -> usize {
-    extern "C" {
-        fn _num_app();
-    }
-    unsafe { (_num_app as usize as *const usize).read_volatile() }
-}
-
-pub fn get_app_data(app_id: usize) -> &'static [u8] {
-    extern "C" {
-        fn _num_app();
-    }
-    let num_app_ptr = _num_app as usize as *const usize;
-    let num_app = get_num_app();
-    let app_start = unsafe { core::slice::from_raw_parts(num_app_ptr.add(1), num_app + 1) };
-    assert!(app_id < num_app);
-    unsafe {
-        core::slice::from_raw_parts(
-            app_start[app_id] as *const u8,
-            app_start[app_id + 1] - app_start[app_id],
-        )
+pub const NUM_APP: usize = 2;
+pub static APP_HELLOWORLD_DATA: &[u8] =
+    include_bytes!("../../target/riscv64gc-unknown-none-elf/release/helloworld");
+pub static APP_SHELL_DATA: &[u8] =
+    include_bytes!("../../target/riscv64gc-unknown-none-elf/release/shell");
+pub static APP_INIT_DATA: &[u8] =
+    include_bytes!("../../target/riscv64gc-unknown-none-elf/release/init");
+pub fn get_app_data_by_name(name: &str) -> Option<&[u8]> {
+    if name == "helloworld" {
+        Some(APP_HELLOWORLD_DATA)
+    } else if name == "shell" {
+        Some(APP_SHELL_DATA)
+    } else if name == "init" {
+        Some(APP_INIT_DATA)
+    } else {
+        None
     }
 }

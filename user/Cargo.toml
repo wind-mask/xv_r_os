@@ -12,5 +12,4 @@ linked_list_allocator = "0.10.5"
 num_enum = {version = "0.7.3",default-features = false}
 xv_r_kernel_pub = {path = "../xv_r_kernel_pub",default-features = false}
 # xv_r_os = { path = "../" }
-[profile.release]
-strip = "symbols"
+

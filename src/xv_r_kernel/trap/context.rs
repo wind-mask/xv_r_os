@@ -22,6 +22,7 @@ impl TrapContext {
         kernel_sp: usize,
         trap_handler: usize,
     ) -> Self {
+        // UNSAFE: 设置app的sstatus为User，设置用户态是安全的
         unsafe { sstatus::set_spp(SPP::User) };
         let sstatus = sstatus::read();
         let mut cx = Self {

@@ -3,7 +3,8 @@ use log::trace;
 use sbi_rt::Physical;
 
 use crate::mm::page_table::translated_byte_buffer;
-use crate::{printf::print, task::current_user_token};
+use crate::printf::print;
+use crate::proc::cpu::current_user_token;
 const FD_STDIN: usize = 0;
 const FD_STDOUT: usize = 1;
 /// 功能：向文件描述符 fd 写入 len 字节的数据，数据来源于 buf 指向的缓冲区。

@@ -3,12 +3,12 @@
 
 use super::address::PhysPageNum;
 use crate::mm::address::PhysAddr;
-use crate::sync::UPSafeCell;
 use crate::{board::qemu::MEMORY_END, printf::println};
 use alloc::vec::Vec;
 use core::fmt::{self, Debug, Formatter};
 use lazy_static::*;
 use log::debug;
+use spin::mutex::spin::SpinMutex;
 
 /// manage a frame which has the same lifecycle as the tracker
 pub struct FrameTracker {
@@ -90,8 +90,9 @@ type FrameAllocatorImpl = StackFrameAllocator;
 
 lazy_static! {
     /// frame allocator instance through lazy_static!
-    pub static ref FRAME_ALLOCATOR: UPSafeCell<FrameAllocatorImpl> =
-        unsafe { UPSafeCell::new(FrameAllocatorImpl::new()) };
+    pub static ref FRAME_ALLOCATOR: SpinMutex<FrameAllocatorImpl> ={
+        debug!("FRAME_ALLOCATOR init");
+         SpinMutex::new(FrameAllocatorImpl::new()) };
 }
 
 /// initiate the frame allocator using `ekernel` and `MEMORY_END`
@@ -109,7 +110,7 @@ pub fn init_frame_allocator() {
         PhysAddr::from(ekernel as usize).ceil().0
     );
     debug!("end number: {}", PhysAddr::from(MEMORY_END).floor().0);
-    FRAME_ALLOCATOR.exclusive_access().init(
+    FRAME_ALLOCATOR.lock().init(
         PhysAddr::from(ekernel as usize).ceil(),
         PhysAddr::from(MEMORY_END).floor(),
     );
@@ -117,15 +118,12 @@ pub fn init_frame_allocator() {
 
 /// allocate a frame
 pub fn frame_alloc() -> Option<FrameTracker> {
-    FRAME_ALLOCATOR
-        .exclusive_access()
-        .alloc()
-        .map(FrameTracker::new)
+    FRAME_ALLOCATOR.lock().alloc().map(FrameTracker::new)
 }
 
 /// deallocate a frame
 fn frame_dealloc(ppn: PhysPageNum) {
-    FRAME_ALLOCATOR.exclusive_access().dealloc(ppn);
+    FRAME_ALLOCATOR.lock().dealloc(ppn);
 }
 
 #[allow(unused)]

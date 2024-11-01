@@ -7,20 +7,18 @@
 #![feature(inline_const_pat)]
 
 use config::{KERNEL_STACK_SIZE, USER_STACK_SIZE};
-use trap::context::TrapContext;
 extern crate alloc;
 #[cfg(test)]
 use crate::test::test_runner;
 pub mod board;
 pub mod config;
 mod hal;
-mod loader;
-pub mod  user;
+pub mod loader;
 pub mod logging;
 pub mod mm;
 mod panic;
-mod proc;
-mod sync;
+pub mod proc;
+// mod sync;
 pub mod syscall;
 pub mod task;
 pub mod test;
@@ -43,13 +41,6 @@ pub struct UserStack {
 impl KernelStack {
     pub fn get_sp(&self) -> usize {
         self.data.as_ptr() as usize + KERNEL_STACK_SIZE
-    }
-    pub fn push_context(&self, cx: TrapContext) -> &'static mut TrapContext {
-        let cx_ptr = (self.get_sp() - core::mem::size_of::<TrapContext>()) as *mut TrapContext;
-        unsafe {
-            *cx_ptr = cx.clone();
-        }
-        unsafe { cx_ptr.as_mut().unwrap() }
     }
 }
 impl UserStack {
