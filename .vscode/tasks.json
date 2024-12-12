@@ -1,0 +1,37 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "just build"
+        },
+        {
+            "label": "qemu-debug",
+            "type": "shell",
+            "isBackground": true,
+            "command": "just qemu-debug DEBUG",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "qemu-kill",
+            "type": "shell",
+            "isBackground": true,
+            "command": "pkill qemu-system-ris",
+            "options": {
+                "shell": {
+                    "executable": "nu",
+                    "args": [
+                        "-c"
+                    ]
+                }
+            },
+            "problemMatcher": []
+        }
+    ]
+}
