@@ -7,6 +7,7 @@
 #![feature(inline_const_pat)]
 
 use config::{KERNEL_STACK_SIZE, USER_STACK_SIZE};
+#[cfg(target_has_atomic = "ptr")]
 extern crate alloc;
 #[cfg(test)]
 use crate::test::test_runner;

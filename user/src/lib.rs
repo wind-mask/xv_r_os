@@ -25,7 +25,8 @@ unsafe extern "C" fn _start() -> ! {
     clear_bss();
     init_heap();
     exit(main());
-    panic!("unreachable after sys_exit!");
+
+    panic!("unreachable after sys_exit!")
 }
 /// 初始化bss段
 ///

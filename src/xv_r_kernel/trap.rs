@@ -45,7 +45,7 @@ unsafe fn set_kernel_trap_entry() {
 #[no_mangle]
 #[repr(align(4))]
 pub fn trap_from_kernel() -> ! {
-    panic!("a trap from kernel!");
+    panic!("a trap from kernel!")
 }
 /// 设置用户态的trap处理入口
 ///
@@ -63,7 +63,7 @@ use riscv::interrupt::supervisor::Exception;
 ///
 /// 作为中断处理函数调用，不手动调用
 #[no_mangle]
-pub unsafe fn trap_handler() -> ! {
+pub unsafe fn trap_handler() {
     set_kernel_trap_entry();
     let cx = current_trap_cx();
     trace!("[kernel] Trap: {:#x}", cx.sepc);
@@ -113,7 +113,7 @@ pub unsafe fn trap_handler() -> ! {
 /// # Safety
 ///
 /// 仅在内核态恢复用户态前调用
-pub unsafe fn trap_return() -> ! {
+pub unsafe fn trap_return() {
     set_user_trap_entry();
     let trap_cx_ptr = TRAP_CONTEXT;
     let user_satp = current_user_token();

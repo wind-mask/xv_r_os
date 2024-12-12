@@ -31,6 +31,6 @@ SECTIONS
     ebss = .;
     /DISCARD/ : {
         *(.eh_frame)
-        *(.debug*)
+        /* *(.debug*) */
     }
 }

@@ -1,6 +1,5 @@
 use riscv::register::time;
 use sbi_rt::set_timer;
-
 pub fn get_time() -> usize {
     time::read()
 }

@@ -27,5 +27,5 @@ pub unsafe fn init_heap() {
 }
 #[alloc_error_handler]
 pub fn handle_alloc_error(layout: core::alloc::Layout) -> ! {
-    panic!("Heap allocation error, layout = {:?}", layout);
+    panic!("Heap allocation error, layout = {:?}", layout)
 }

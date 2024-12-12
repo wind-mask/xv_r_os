@@ -12,7 +12,7 @@ use crate::{
 /// syscall ID：93
 pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
-    panic!("Unreachable in sys_exit!");
+    panic!("Unreachable in sys_exit!")
 }
 /// 功能：应用主动交出 CPU 所有权并切换到其他应用。
 /// 返回值：总是返回 0。
