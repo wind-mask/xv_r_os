@@ -11,7 +11,8 @@ BOOTLOADER := "./bootloader/rustsbi-qemu-release/rustsbi-qemu.bin"
 KERNEL_BIN := "./os_bin/xv_r_os.bin"
 KERNEL_BIN_DEBUG := "./os_bin/xv_r_os-debug.bin"
 KERNEL_ENTRY_PA := "0x80200000"
-QEMU_ARGS := "-machine virt  -bios "  + BOOTLOADER +  " -device loader,file="+KERNEL_BIN+",addr="+KERNEL_ENTRY_PA + " -m 8M"
+# QEMU_ARGS := "-machine virt  -bios "  + BOOTLOADER +  " -device loader,file="+KERNEL_BIN+",addr="+KERNEL_ENTRY_PA + " -m 8M" 
+QEMU_ARGS := "-machine virt -bios "+ BOOTLOADER  +  " -kernel " + KERNEL_BIN + " -m 8M" 
 QEMU_ARGS_DEBUG := "-machine virt  -bios "  + BOOTLOADER +  " -device loader,file="+KERNEL_BIN_DEBUG+",addr="+KERNEL_ENTRY_PA + " -m 8M"
 #QEMU_ARGS := "-machine virt  -bios "  + BOOTLOADER + " -kernel " + KERNEL_BIN
 LOG_LEVEL_ENV := env_var_or_default('LOG', 'info')

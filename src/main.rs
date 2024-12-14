@@ -5,14 +5,13 @@
 #![feature(stmt_expr_attributes)]
 #![test_runner(test_runner)]
 extern crate alloc;
-
 use core::ptr::addr_of;
 
 use log::{debug, info};
 use xv_r_kernel::{
     config::KERNEL_STACK_SIZE,
     logging,
-    mm::{self, heap_allocator::init_heap, memory_set::remap_test},
+    mm::{self, memory_set::remap_test},
     proc::cpu::run_tasks,
     timer,
     trap::{self},
@@ -92,8 +91,8 @@ fn main() {
     logging::init();
     info!("[kernel] logging initialized.");
     // 初始化堆，必须先于alloc之前调用
-    unsafe { init_heap() };
-    info!("[kernel] heap initialized.");
+    // unsafe { init_heap() };
+    // info!("[kernel] heap initialized.");
     // 初始化内存管理系统，分页，虚拟内存
     unsafe { mm::init() };
     remap_test();
@@ -113,7 +112,6 @@ fn main() {
     info!("time: {}", riscv::register::time::read());
     // trap::enable_timer_interrupt();
     timer::set_next_trigger();
-
     unsafe { run_tasks() };
     unreachable!()
 }
